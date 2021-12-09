@@ -5,6 +5,9 @@ library(tm)
 library(stringr)
 library(rstan)
 library(shinystan)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
 
 # balance unfair 0 and 1
 data <- read.csv("train_tweets.csv")
@@ -85,5 +88,33 @@ launch_shinystan(fit)
 
 data = extract(fit, permuted = TRUE, inc_warmup = FALSE, include = TRUE)
 Phi <- data$phi
-Phi[4000, ,1]
-w[1]
+dim(Phi)
+
+# analysis
+first_emo <- apply(Phi[,1,1:1132], 2, mean)
+second_emo <- apply(Phi[,2,1:1132], 2, mean)
+plot(first_emo)
+plot(second_emo)
+
+which.max(first_emo)
+which.max(second_emo)
+
+sort_first_emo <- sort(first_emo, index.return=TRUE, decreasing=TRUE)
+top_five_first <- lapply(sort_first_emo, `[`, sort_first_emo$x %in% head(unique(sort_first_emo$x),6))
+words_chosen_first = top_five_first$ix
+words_chosen_first = words_chosen_first[-2]
+words_first <- list_words[words_chosen_first]
+
+sort_second_emo <- sort(second_emo, index.return=TRUE, decreasing=TRUE)
+top_five_second <- lapply(sort_second_emo, `[`, sort_second_emo$x %in% head(unique(sort_second_emo$x),6))
+words_chosen_second = top_five_second$ix
+words_second <- list_words[words_chosen_second]
+freq = 5:1
+
+wordcloud(words = words_first, freq = freq, min.freq = 1, max.words=200,
+          random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
+
+wordcloud(words = words_second, freq = freq, min.freq = 1, max.words=200,
+          random.order=FALSE, rot.per=0.35,colors=brewer.pal(8, "Dark2"))
+
+save(fit, file = "fit.Rdata")
